@@ -1,0 +1,6 @@
+generated.*.ld
+*.o
+*.d
+*.elf
+*.hex
+*.map
