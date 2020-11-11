@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from PIL import Image
+import hitherdither
 import sys
 import os
 
@@ -16,33 +17,23 @@ PALETTE = (
     (194, 164, 24)
 )
 
-def to_palette(color):
-    min_diff = sys.maxsize
-    color_index = None
-
-    for idx, p in enumerate(PALETTE):
-        diff_r = (color[0] - p[0])
-        diff_g = (color[1] - p[1])
-        diff_b = (color[2] - p[2])
-        diff = diff_r**2 + diff_g**2 + diff_b**2
-
-        if diff < min_diff:
-            min_diff = diff
-            color_index = idx
-
-    return color_index
-
-
-
 raw_data = []
 
+# convert RGB palette to hitherdither compatible format
+hitherdither_array = []
+for p in PALETTE:
+    hitherdither_array.append(p[0] << 16 | p[1] << 8 | p[2])
+hitherdither_palette = hitherdither.palette.Palette(hitherdither_array)
+
 with Image.open(sys.argv[1]) as input_img:
-    input_pix = input_img.load()
+    dithered_img = hitherdither.ordered.yliluoma.yliluomas_1_ordered_dithering(input_img, hitherdither_palette, order=8)
+    #dithered_img = hitherdither.ordered.bayer.bayer_dithering(input_img, hitherdither_palette, [256/4, 256/4, 256/4], order=16)
+    input_pix = dithered_img.load()
 
     for y in range(HEIGHT):
         for x in range(WIDTH // 2):
-            p1 = to_palette(input_pix[2*x,     y])
-            p2 = to_palette(input_pix[2*x + 1, y])
+            p1 = input_pix[2*x,     y]
+            p2 = input_pix[2*x + 1, y]
             raw_data.append(p1 << 4 | p2)
 
 with open(os.path.splitext(sys.argv[1])[0] + '.bin', 'wb') as output_file:
