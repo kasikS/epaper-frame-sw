@@ -4,3 +4,5 @@ generated.*.ld
 *.elf
 *.hex
 *.map
+*.bin
+*.png
