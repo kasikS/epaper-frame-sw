@@ -26,6 +26,32 @@ for p in PALETTE:
 hitherdither_palette = hitherdither.palette.Palette(hitherdither_array)
 
 with Image.open(sys.argv[1]) as input_img:
+    # scale the image so at least one dimension matches the display resolution
+    if input_img.size != (WIDTH, HEIGHT):
+        scale = 1
+
+        if input_img.size[0] > input_img.size[1]:
+            # landscape
+            scale = HEIGHT / input_img.size[1]
+        else:
+            # portrait
+            scale = WIDTH / input_img.size[0]
+
+        new_size = (int(input_img.size[0] * scale), int(input_img.size[1] * scale))
+        print('Rescaling image to {0}'.format(new_size))
+        assert(new_size[0] == WIDTH or new_size[1] == HEIGHT)
+        input_img = input_img.resize(new_size)
+
+    # crop the image so that it fits the display
+    if input_img.size != (WIDTH, HEIGHT):
+        width_crop = int((input_img.size[0] - WIDTH) / 2)
+        height_crop = int((input_img.size[1] - HEIGHT) / 2)
+        crop_rect = (width_crop, height_crop, WIDTH + width_crop, HEIGHT + height_crop)
+        print('Cropping image {0}'.format(crop_rect))
+        input_img = input_img.crop(crop_rect)
+
+    assert(input_img.size[0] == WIDTH and input_img.size[1] == HEIGHT)
+
     dithered_img = hitherdither.ordered.yliluoma.yliluomas_1_ordered_dithering(input_img, hitherdither_palette, order=8)
     #dithered_img = hitherdither.ordered.bayer.bayer_dithering(input_img, hitherdither_palette, [256/4, 256/4, 256/4], order=16)
     input_pix = dithered_img.load()
