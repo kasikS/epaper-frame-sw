@@ -40,20 +40,23 @@ void rtc_wkup_isr(void)
     serial_puts("RTC!");
 }
 
+static void setup_clocks(void)
 {
     /* 4MHz MSI raw range 2*/
-    // TODO clock setup
-    /*struct rcc_clock_scale myclock_config = {*/
-        /*.hpre = RCC_CFGR_HPRE_SYSCLK_NODIV,*/
-        /*.ppre1 = RCC_CFGR_PPRE1_HCLK_NODIV,*/
-        /*.ppre2 = RCC_CFGR_PPRE2_HCLK_NODIV,*/
-        /*.voltage_scale = PWR_SCALE2,*/
-        /*.flash_waitstates = FLASH_ACR_LATENCY_0WS,*/
-        /*.apb1_frequency = 4194000,*/
-        /*.apb2_frequency = 4194000,*/
-        /*.msi_range = RCC_ICSCR_MSIRANGE_4MHZ,*/
-    /*};*/
-    /*rcc_clock_setup_msi(&myclock_config);*/
+    struct rcc_clock_scale myclock_config = {
+        .hpre = RCC_CFGR_HPRE_SYSCLK_NODIV,
+        .ppre1 = RCC_CFGR_PPRE1_HCLK_NODIV,
+        .ppre2 = RCC_CFGR_PPRE2_HCLK_NODIV,
+        .voltage_scale = PWR_SCALE2,
+        .flash_waitstates = FLASH_ACR_LATENCY_0WS,
+        .apb1_frequency = 4194000,
+        .apb2_frequency = 4194000,
+        .msi_range = RCC_ICSCR_MSIRANGE_4MHZ,
+    };
+
+    rcc_clock_setup_msi(&myclock_config);
+}
+
 
 int main(void)
 {
