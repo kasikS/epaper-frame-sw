@@ -24,10 +24,17 @@
 #include "serial.h"
 #include "delay.h"
 #include "sdcard.h"
+#include "rtc.h"
 
 uint8_t sd_buf[512];
 
-int main(void)
+void rtc_wkup_isr(void)
+{
+    RTC_ISR &= ~(RTC_ISR_WUTF);
+    exti_reset_request(EXTI20);
+    serial_puts("RTC!");
+}
+
 {
     /* 4MHz MSI raw range 2*/
     // TODO clock setup
@@ -43,12 +50,14 @@ int main(void)
     /*};*/
     /*rcc_clock_setup_msi(&myclock_config);*/
 
+int main(void)
     rcc_periph_clock_enable(RCC_GPIOB);
     char int_buf[6];
     int int_len;
 
     serial_init(115200);
     delay_init();
+    rtc_init();
     if (SDCARD_Init() == 0)
     {
         serial_puts("jeeej!");
@@ -68,6 +77,8 @@ int main(void)
     {
         serial_puts("buuu:(");
     }
+
+    rtc_set_wakeup(86400);  // 86400s == 24h
 
     /* LED pins */
     gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO6);

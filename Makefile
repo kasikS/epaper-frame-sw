@@ -1,6 +1,6 @@
 BINARY = ramka
 DEVICE = stm32l152r8
-OBJS   = delay.o serial.o sdcard.o
+OBJS   = delay.o serial.o sdcard.o rtc.o
 
 LIBNAME = opencm3_stm32l1
 DEFS    += -DSTM32L1
