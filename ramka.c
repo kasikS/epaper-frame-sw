@@ -28,6 +28,11 @@
 
 uint8_t sd_buf[512];
 
+static inline __attribute__((always_inline)) void __WFI(void)
+{
+	__asm volatile ("wfi");
+}
+
 void rtc_wkup_isr(void)
 {
     RTC_ISR &= ~(RTC_ISR_WUTF);
@@ -51,6 +56,8 @@ void rtc_wkup_isr(void)
     /*rcc_clock_setup_msi(&myclock_config);*/
 
 int main(void)
+{
+    /*setup_clocks();*/
     rcc_periph_clock_enable(RCC_GPIOB);
     char int_buf[6];
     int int_len;
@@ -88,8 +95,10 @@ int main(void)
 
     while (1)
     {
+        pwr_set_standby_mode();
+        __WFI();
+
         gpio_toggle(GPIOB, GPIO6);
         gpio_toggle(GPIOB, GPIO7);
-        delay_ms(500);
     }
 }
