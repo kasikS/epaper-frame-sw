@@ -69,42 +69,41 @@ void to_bit_string(uint32_t number, char stringArray[])
 }
 
 /**
- * \brief Initializes USART1
+ * \brief Initializes USART2
  *
  * \param baud specifies the baud rate
  */
 void serial_init(uint32_t baud)
 {
     rcc_periph_clock_enable(RCC_GPIOA);
-    rcc_periph_clock_enable(RCC_USART1);
-
+    rcc_periph_clock_enable(RCC_USART2);
 
     /* Setup GPIO pins for USART2 transmit. */
     /* Setup USART2 TX pin as alternate function. */
-    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO9);
-    gpio_set_af(GPIOA, GPIO_AF7, GPIO9);
+    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO2);
+    gpio_set_af(GPIOA, GPIO_AF4, GPIO2);
 
-    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
-    gpio_set_af(GPIOA, GPIO_AF7, GPIO10);
+    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO3);
+    gpio_set_af(GPIOA, GPIO_AF4, GPIO3);
 
-    usart_set_baudrate(USART1, baud);
-    usart_set_databits(USART1, 8);
-    usart_set_stopbits(USART1, USART_STOPBITS_1);
-    usart_set_parity(USART1, USART_PARITY_NONE);
-    usart_set_mode(USART1, USART_MODE_TX_RX);
-    usart_set_flow_control(USART1, USART_FLOWCONTROL_NONE);
-    usart_enable(USART1);
+    usart_set_baudrate(USART2, baud);
+    usart_set_databits(USART2, 8);
+    usart_set_stopbits(USART2, USART_STOPBITS_1);
+    usart_set_parity(USART2, USART_PARITY_NONE);
+    usart_set_mode(USART2, USART_MODE_TX_RX);
+    usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
+    usart_enable(USART2);
 }
 
 /**
- * \brief Sends a character over USART1
+ * \brief Sends a character over USART2
  *
  * \param c is a character to be sent
  */
 void serial_putc(const char c)
 {
 		/* sends a single character*/
-		usart_send_blocking(USART1, c);
+		usart_send_blocking(USART2, c);
 }
 
 /**
