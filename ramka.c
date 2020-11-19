@@ -25,6 +25,7 @@
 #include "delay.h"
 #include "sdcard.h"
 #include "rtc.h"
+#include "power.h"
 
 uint8_t sd_buf[512];
 
