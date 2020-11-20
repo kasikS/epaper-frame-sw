@@ -49,25 +49,35 @@ static void display_image(unsigned int index)
     delay_ms(50);
 
     power_epaper(true);
-    delay_ms(100);
-    SetupEPaperDisplay();
-    ClearEpaper(EPD_5IN65F_ORANGE);     // TODO remove
+    power_sd(true);
+    delay_ms(200);
 
-    /*power_sd(true);
-    SDCARD_Init();
+    SetupEPaperDisplay();
+
+    if (SDCARD_Init()) {
+        serial_puts("buuu:(");
+        power_sd(false);
+        power_epaper(false);
+        return;
+    } else {
+        serial_puts("sd ok");
+    }
 
     SetupEPaperForData();
+    SDCARD_ReadBegin(index * 263);
 
-    // TODO read image from SD and transfer it to epaper
-    //for(int i = 0; i < xxx; ++i) {
-        //SDCARD_ReadBegin(0);
-        //SDCARD_ReadData(sd_buf);
-        //SDCARD_ReadEnd();
-        //SendEPaperData(sd_buf, sizeof(sd_buf));
-    //}
+    // read image from SD and transfer it to epaper
+    for(int i = 0; i < 263; ++i) {
+        SDCARD_ReadData(sd_buf);
+        SendEPaperData(sd_buf, sizeof(sd_buf));
+    }
+    SDCARD_ReadEnd();
 
     FlushAndDisplayEPaper();
-    */
+
+    delay_ms(100);
+    power_sd(false);
+    power_epaper(false);
 }
 
 int main(void)
