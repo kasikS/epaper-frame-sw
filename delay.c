@@ -26,15 +26,15 @@
 
 void delay_init(void)
 {
-    rcc_periph_clock_enable(RCC_TIM3);
-    rcc_periph_reset_pulse(RST_TIM3);
+    rcc_periph_clock_enable(RCC_TIM2);
+    rcc_periph_reset_pulse(RST_TIM2);
 
-    timer_set_mode(TIM3, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
-    timer_set_prescaler(TIM3, (rcc_apb1_frequency / TIMER_FREQ));
-    timer_set_period(TIM3, 65535);
-    timer_enable_preload(TIM3);
-    timer_continuous_mode(TIM3);
-    timer_enable_counter(TIM3);
+    timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+    timer_set_prescaler(TIM2, (rcc_apb1_frequency / TIMER_FREQ));
+    timer_set_period(TIM2, 65535);
+    timer_enable_preload(TIM2);
+    timer_continuous_mode(TIM2);
+    timer_enable_counter(TIM2);
 }
 
 void delay_us(int usecs)
@@ -47,6 +47,6 @@ void delay_us(int usecs)
     }
 
     uint32_t finish = TIMER_FREQ_MPLIER * usecs;
-    timer_set_counter(TIM3, 0);
-    while(timer_get_counter(TIM3) < finish);
+    timer_set_counter(TIM2, 0);
+    while(timer_get_counter(TIM2) < finish);
 }
