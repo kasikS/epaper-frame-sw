@@ -62,7 +62,6 @@ static void setup_clocks(void)
 int main(void)
 {
     /*setup_clocks();*/
-    rcc_periph_clock_enable(RCC_GPIOB);
     char int_buf[6];
     int int_len;
 
@@ -91,18 +90,11 @@ int main(void)
 
     rtc_set_wakeup(86400);  // 86400s == 24h
 
-    /* LED pins */
-    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO6);
-    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO7);
-    gpio_clear(GPIOB, GPIO6);
-    gpio_set(GPIOB, GPIO7);
 
     while (1)
     {
         pwr_set_standby_mode();
         __WFI();
 
-        gpio_toggle(GPIOB, GPIO6);
-        gpio_toggle(GPIOB, GPIO7);
     }
 }
