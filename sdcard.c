@@ -7,7 +7,7 @@
 #include <libopencm3/stm32/spi.h>
 
 #define CS_PORT GPIOB
-#define CS_PIN GPIO12
+#define CS_PIN GPIO0
 
 static void SDCARD_Select(void) {
     gpio_clear(CS_PORT, CS_PIN);
@@ -31,8 +31,8 @@ static int HAL_SPI_TransmitReceive (void *hspi, uint8_t *pTxData, uint8_t *pRxDa
     (void) Timeout;
     for (unsigned int i = 0; i < Size; ++i)
     {
-        pRxData[i] = spi_xfer(SPI2, pTxData[i]);
-        while (SPI_SR(SPI2) & SPI_SR_BSY);
+        pRxData[i] = spi_xfer(SPI1, pTxData[i]);
+        while (SPI_SR(SPI1) & SPI_SR_BSY);
     }
 
     return 0;
@@ -44,8 +44,8 @@ static int HAL_SPI_Transmit (void *hspi, uint8_t *pData, uint16_t Size, uint32_t
     (void) Timeout;
     for (unsigned int i = 0; i < Size; ++i)
     {
-        spi_send(SPI2, pData[i]);
-        while (SPI_SR(SPI2) & SPI_SR_BSY);
+        spi_send(SPI1, pData[i]);
+        while (SPI_SR(SPI1) & SPI_SR_BSY);
     }
 
     return 0;
@@ -123,23 +123,24 @@ static int SDCARD_WaitNotBusy(void) {
 }
 
 int SDCARD_Init() {
+    rcc_periph_clock_enable(RCC_GPIOA);
     rcc_periph_clock_enable(RCC_GPIOB);
-    rcc_periph_clock_enable(RCC_SPI2);
+    rcc_periph_clock_enable(RCC_SPI1);
 
-    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13);
-    gpio_set_af(GPIOB, GPIO_AF5, GPIO13);
-    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO14);
-    gpio_set_af(GPIOB, GPIO_AF5, GPIO14);
-    gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO15);
-    gpio_set_af(GPIOB, GPIO_AF5, GPIO15);
+    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO5);
+    gpio_set_af(GPIOA, GPIO_AF0, GPIO13);
+    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO6);
+    gpio_set_af(GPIOA, GPIO_AF0, GPIO14);
+    gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO7);
+    gpio_set_af(GPIOA, GPIO_AF0, GPIO15);
     gpio_mode_setup(CS_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, CS_PIN);
 
-    spi_reset(SPI2);
-    spi_init_master(SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_2, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+    spi_reset(SPI1);
+    spi_init_master(SPI1, SPI_CR1_BAUDRATE_FPCLK_DIV_2, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
                 SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
 
-    spi_set_full_duplex_mode(SPI2);
-    spi_enable(SPI2);
+    spi_set_full_duplex_mode(SPI1);
+    spi_enable(SPI1);
 
 
     /*
