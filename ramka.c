@@ -26,6 +26,7 @@
 #include "sdcard.h"
 #include "rtc.h"
 #include "power.h"
+#include "epaper.h"
 
 uint8_t sd_buf[512];
 
@@ -41,23 +42,33 @@ void rtc_wkup_isr(void)
     serial_puts("RTC!");
 }
 
-static void setup_clocks(void)
+static void display_image(unsigned int index)
 {
-    /* 4MHz MSI raw range 2*/
-    struct rcc_clock_scale myclock_config = {
-        .hpre = RCC_CFGR_HPRE_SYSCLK_NODIV,
-        .ppre1 = RCC_CFGR_PPRE1_HCLK_NODIV,
-        .ppre2 = RCC_CFGR_PPRE2_HCLK_NODIV,
-        .voltage_scale = PWR_SCALE2,
-        .flash_waitstates = FLASH_ACR_LATENCY_0WS,
-        .apb1_frequency = 4194000,
-        .apb2_frequency = 4194000,
-        .msi_range = RCC_ICSCR_MSIRANGE_4MHZ,
-    };
+    power_sd(false);
+    power_epaper(false);
+    delay_ms(50);
 
-    rcc_clock_setup_msi(&myclock_config);
+    power_epaper(true);
+    delay_ms(100);
+    SetupEPaperDisplay();
+    ClearEpaper(EPD_5IN65F_ORANGE);     // TODO remove
+
+    /*power_sd(true);
+    SDCARD_Init();
+
+    SetupEPaperForData();
+
+    // TODO read image from SD and transfer it to epaper
+    //for(int i = 0; i < xxx; ++i) {
+        //SDCARD_ReadBegin(0);
+        //SDCARD_ReadData(sd_buf);
+        //SDCARD_ReadEnd();
+        //SendEPaperData(sd_buf, sizeof(sd_buf));
+    //}
+
+    FlushAndDisplayEPaper();
+    */
 }
-
 
 int main(void)
 {
@@ -68,6 +79,7 @@ int main(void)
     serial_init(115200);
     delay_init();
     rtc_init();
+    power_init();
     if (SDCARD_Init() == 0)
     {
         serial_puts("jeeej!");

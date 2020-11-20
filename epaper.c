@@ -15,13 +15,19 @@
 //#define GPIOOn( x )   { WVS_PORT |= _BV(x); }
 //#define GPIORead( x ) ( !! (WVS_PIN & _BV(x) ) )
 
-#define PORT 			GPIOB //which port??
-#define WVS_CS_PIN		GPIO12 //which pin?
-#define WVS_BUSY_PIN	GPIO11 // which pin?
-#define WVS_CLK_PIN		GPIO10 // which pin?
-#define WVS_MOSI_PIN	GPIO9 // which pin?
-#define WVS_DC_PIN		GPIO8 // which pin?
-#define WVS_RST_PIN		GPIO7 // which pin?
+#define WVS_CS_PIN		GPIO14
+#define WVS_CS_PORT		GPIOB
+#define WVS_BUSY_PIN	        GPIO12
+#define WVS_BUSY_PORT	        GPIOB
+#define WVS_CLK_PIN		GPIO13
+#define WVS_CLK_PORT		GPIOB
+#define WVS_MOSI_PIN	        GPIO15
+#define WVS_MOSI_PORT	        GPIOB
+
+#define WVS_DC_PIN		GPIO8
+#define WVS_DC_PORT		GPIOA
+#define WVS_RST_PIN		GPIO9
+#define WVS_RST_PORT		GPIOA
 
 
 //#define WVS_PORT  PORTD
@@ -32,28 +38,32 @@
 
 static void EPD_5IN65F_BusyHigh( uint16_t timeout )// If BUSYN=0 then waiting
 {
-    while(!(gpio_get(PORT, WVS_BUSY_PIN)))
+    while(!(gpio_get(WVS_BUSY_PORT, WVS_BUSY_PIN)))
 	{
 		if( timeout-- == 0 ) break;
 		delay_ms(1);
 	}
+
+    if (!timeout) serial_puts("timeout");     // TODO remove
 }
 
 static void EPD_5IN65F_BusyLow( uint16_t timeout )// If BUSYN=1 then waiting
 {
-    while(gpio_get(PORT, WVS_BUSY_PIN))
+    while(gpio_get(WVS_BUSY_PORT, WVS_BUSY_PIN))
 	{
 		if( timeout-- == 0 ) break;
 		delay_ms(1);
 	}
+
+    if (!timeout) serial_puts("timeout");     // TODO remove
 }
 
 static void wvs_Select(void) {
-    gpio_clear(PORT, WVS_CS_PIN);
+    gpio_clear(WVS_CS_PORT, WVS_CS_PIN);
 }
 
 static void wvs_Unselect(void) {
-    gpio_set(PORT, WVS_CS_PIN);
+    gpio_set(WVS_CS_PORT, WVS_CS_PIN);
 }
 
 static void SpiTransfer( uint8_t data )
@@ -83,15 +93,18 @@ static void SpiTransfer( uint8_t data )
 //	}
 //	GPIOOn( WVS_CS );
 
+    wvs_Select();
+    delay_us(10);
     spi_send(SPI2, data); 									//which SPI????
     while (SPI_SR(SPI2) & SPI_SR_BSY);
-
-
+    delay_us(10);
+    wvs_Unselect();
 }
 
 static void SendCommand( uint8_t command  )
 {
-   gpio_clear(PORT, WVS_DC_PIN);
+    gpio_clear(WVS_DC_PORT, WVS_DC_PIN);
+    delay_us(10);
 //	GPIOOff( WVS_DC );
 //	Delay();
     SpiTransfer( command );
@@ -99,7 +112,8 @@ static void SendCommand( uint8_t command  )
 
 static void SendData( uint8_t data  )
 {
-   gpio_set(PORT, WVS_DC_PIN);
+    gpio_set(WVS_DC_PORT, WVS_DC_PIN);
+    delay_us(10);
 //    GPIOOn( WVS_DC );
 //	Delay();
     SpiTransfer( data );
@@ -107,55 +121,44 @@ static void SendData( uint8_t data  )
 
 void SetupEPaperForData(void)
 {
-	wvs_Select();
-
-	SendCommand(0x61);//Set Resolution setting
+    SendCommand(0x61);//Set Resolution setting
     SendData(0x02);
     SendData(0x58);
     SendData(0x01);
     SendData(0xC0);
     SendCommand(0x10);
-
-    wvs_Unselect();
 }
 
 void SendEPaperData(uint8_t * data, int len)
 {
-	wvs_Select();
-
-	int i;
-	for( i = 0; i < len; i++ )
-		SendData( data[i] );
-
-	wvs_Unselect();
+    int i;
+    for( i = 0; i < len; i++ )
+        SendData( data[i] );
 }
 
 void FlushAndDisplayEPaper(void)
 {
-	wvs_Select();
-
     SendCommand(0x04);//0x04
     EPD_5IN65F_BusyHigh(150);
     SendCommand(0x12);//0x12
     EPD_5IN65F_BusyHigh(15000);
     SendCommand(0x02);  //0x02
     EPD_5IN65F_BusyLow(150);
-	delay_ms(20);
-
-   wvs_Unselect();
+    delay_ms(20);
 }
 
 
 void ClearEpaper(uint8_t color)
 {
+    SetupEPaperForData();
 
-	SetupEPaperForData();
-	uint8_t cv = (color<<4)|color;
+    uint8_t cv = (color<<4)|color;
     for(int i=0; i<width/2; i++) {
         for(int j=0; j<height; j++)
             SendData(cv);
     }
-	FlushAndDisplayEPaper();
+
+    FlushAndDisplayEPaper();
 }
 
 
@@ -248,38 +251,36 @@ void SetupEPaperDisplay(void)
     rcc_periph_clock_enable(RCC_SPI2);
 
     gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO13);
-    gpio_set_af(GPIOB, GPIO_AF5, GPIO13);
+    gpio_set_af(GPIOB, GPIO_AF0, GPIO13);
     gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO14);
-    gpio_set_af(GPIOB, GPIO_AF5, GPIO14);
+    gpio_set_af(GPIOB, GPIO_AF0, GPIO14);
     gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO15);
-    gpio_set_af(GPIOB, GPIO_AF5, GPIO15);
-    gpio_mode_setup(PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, WVS_CS_PIN);
+    gpio_set_af(GPIOB, GPIO_AF0, GPIO15);
+    gpio_mode_setup(WVS_CS_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, WVS_CS_PIN);
+    gpio_set(WVS_CS_PORT, WVS_CS_PIN);
 
     spi_reset(SPI2);
-    spi_init_master(SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_2, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+    spi_init_master(SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_16, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
                 SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
 
     spi_set_full_duplex_mode(SPI2);
     spi_enable(SPI2);
 
 /////configure reset, busy, dc!
-    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, WVS_RST_PIN);
-    gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, WVS_DC_PIN);
-    gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_NONE, WVS_BUSY_PIN);
+    gpio_mode_setup(WVS_RST_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, WVS_RST_PIN);
+    gpio_mode_setup(WVS_DC_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, WVS_DC_PIN);
+    gpio_mode_setup(WVS_BUSY_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, WVS_BUSY_PIN);
 
-	//Reset for 1ms
-	gpio_clear(PORT, WVS_RST_PIN);
+    //Reset for 1ms
+    gpio_clear(WVS_RST_PORT, WVS_RST_PIN);
     delay_ms(10);
-	gpio_set(PORT, WVS_RST_PIN);
-	delay_ms(10);
+    gpio_set(WVS_RST_PORT, WVS_RST_PIN);
+    delay_ms(10);
 
 ///////////////
     serial_puts( "Epaper Leaving Reset\n" );
     EPD_5IN65F_BusyHigh( 20 );
     serial_puts( "Epaper Busy High Done\n" );
-
-
-	wvs_Select();
 
     SendCommand(0x00);
     SendData(0xEF);
@@ -315,6 +316,4 @@ void SetupEPaperDisplay(void)
     SendCommand(0x50);
     SendData(0x37);
     delay_ms(50);
-
-	wvs_Unselect();
 }

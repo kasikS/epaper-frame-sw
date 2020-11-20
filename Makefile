@@ -1,6 +1,6 @@
 BINARY = ramka
 DEVICE = stm32l052c6
-OBJS   = delay.o serial.o sdcard.o rtc.o
+OBJS   = delay.o serial.o sdcard.o rtc.o epaper.o power.o
 
 LIBNAME = opencm3_stm32l0
 DEFS    += -DSTM32L0
