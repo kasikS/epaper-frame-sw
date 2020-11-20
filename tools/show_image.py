@@ -2,10 +2,11 @@
 from PIL import Image
 import sys
 import os
+import math
 
 WIDTH = 600
 HEIGHT = 448
-IMAGE_SIZE = WIDTH * HEIGHT // 2
+IMAGE_SIZE = math.ceil(WIDTH * HEIGHT / 2 / 512) * 512 # round to 512
 PALETTE = (
     (0, 0, 0),
     (255, 255, 255),

@@ -62,5 +62,8 @@ with Image.open(sys.argv[1]) as input_img:
             p2 = input_pix[2*x + 1, y]
             raw_data.append(p1 << 4 | p2)
 
+    # padding to make it a multiplicity of 512 bytes
+    raw_data.extend([0] * 256)
+
 with open(os.path.splitext(sys.argv[1])[0] + '.bin', 'wb') as output_file:
     output_file.write(bytes(raw_data))
