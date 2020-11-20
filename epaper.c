@@ -94,28 +94,20 @@ static void SpiTransfer( uint8_t data )
 //	GPIOOn( WVS_CS );
 
     wvs_Select();
-    delay_us(10);
     spi_send(SPI2, data); 									//which SPI????
     while (SPI_SR(SPI2) & SPI_SR_BSY);
-    delay_us(10);
     wvs_Unselect();
 }
 
 static void SendCommand( uint8_t command  )
 {
     gpio_clear(WVS_DC_PORT, WVS_DC_PIN);
-    delay_us(10);
-//	GPIOOff( WVS_DC );
-//	Delay();
     SpiTransfer( command );
 }
 
 static void SendData( uint8_t data  )
 {
     gpio_set(WVS_DC_PORT, WVS_DC_PIN);
-    delay_us(10);
-//    GPIOOn( WVS_DC );
-//	Delay();
     SpiTransfer( data );
 }
 
@@ -260,7 +252,7 @@ void SetupEPaperDisplay(void)
     gpio_set(WVS_CS_PORT, WVS_CS_PIN);
 
     spi_reset(SPI2);
-    spi_init_master(SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_16, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+    spi_init_master(SPI2, SPI_CR1_BAUDRATE_FPCLK_DIV_2, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
                 SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_8BIT, SPI_CR1_MSBFIRST);
 
     spi_set_full_duplex_mode(SPI2);
