@@ -1,11 +1,7 @@
-/* vim: set ai et ts=4 sw=4: */
 #ifndef __SDCARD_H__
 #define __SDCARD_H__
 
 #include <stdint.h>
-
-// call before initializing any SPI devices
-void SDCARD_Unselect(void);
 
 // all procedures return 0 on success, < 0 on failure
 
