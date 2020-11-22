@@ -1,111 +1,73 @@
-#include <stdlib.h>
-#include "epaper.h"
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/spi.h>
+#include <stdlib.h>
 #include <string.h>
-#include "serial.h"
+#include "epaper.h"
 #include "delay.h"
 
+#define WVS_CS_PIN          GPIO14
+#define WVS_CS_PORT         GPIOB
+#define WVS_BUSY_PIN        GPIO12
+#define WVS_BUSY_PORT       GPIOB
+#define WVS_CLK_PIN         GPIO13
+#define WVS_CLK_PORT        GPIOB
+#define WVS_MOSI_PIN        GPIO15
+#define WVS_MOSI_PORT       GPIOB
 
-#define width EPD_WIDTH
-#define height EPD_HEIGHT
-
-//#define GPIOOff( x )  { WVS_PORT &= ~_BV(x); }
-//#define GPIOOn( x )   { WVS_PORT |= _BV(x); }
-//#define GPIORead( x ) ( !! (WVS_PIN & _BV(x) ) )
-
-#define WVS_CS_PIN		GPIO14
-#define WVS_CS_PORT		GPIOB
-#define WVS_BUSY_PIN	        GPIO12
-#define WVS_BUSY_PORT	        GPIOB
-#define WVS_CLK_PIN		GPIO13
-#define WVS_CLK_PORT		GPIOB
-#define WVS_MOSI_PIN	        GPIO15
-#define WVS_MOSI_PORT	        GPIOB
-
-#define WVS_DC_PIN		GPIO8
-#define WVS_DC_PORT		GPIOA
-#define WVS_RST_PIN		GPIO9
-#define WVS_RST_PORT		GPIOA
+#define WVS_DC_PIN          GPIO8
+#define WVS_DC_PORT         GPIOA
+#define WVS_RST_PIN         GPIO9
+#define WVS_RST_PORT        GPIOA
 
 
-//#define WVS_PORT  PORTD
-//#define WVS_PIN   PIND
-//#define WVS_DDR   DDRD
-
-
-
-static void EPD_5IN65F_BusyHigh( uint16_t timeout )// If BUSYN=0 then waiting
+static void EPD_5IN65F_BusyHigh(uint16_t timeout)// If BUSYN=0 then waiting
 {
     while(!(gpio_get(WVS_BUSY_PORT, WVS_BUSY_PIN)))
-	{
-		if( timeout-- == 0 ) break;
-		delay_ms(1);
-	}
+    {
+        if( timeout-- == 0 )
+            break;
 
-    if (!timeout) serial_puts("timeout");     // TODO remove
+        delay_ms(1);
+    }
 }
 
-static void EPD_5IN65F_BusyLow( uint16_t timeout )// If BUSYN=1 then waiting
+static void EPD_5IN65F_BusyLow(uint16_t timeout)// If BUSYN=1 then waiting
 {
     while(gpio_get(WVS_BUSY_PORT, WVS_BUSY_PIN))
-	{
-		if( timeout-- == 0 ) break;
-		delay_ms(1);
-	}
+    {
+        if( timeout-- == 0 )
+            break;
 
-    if (!timeout) serial_puts("timeout");     // TODO remove
+        delay_ms(1);
+    }
 }
 
-static void wvs_Select(void) {
+static inline void wvs_Select(void)
+{
     gpio_clear(WVS_CS_PORT, WVS_CS_PIN);
 }
 
-static void wvs_Unselect(void) {
+static inline void wvs_Unselect(void)
+{
     gpio_set(WVS_CS_PORT, WVS_CS_PIN);
 }
 
 static void SpiTransfer( uint8_t data )
 {
-//	int bit;
-//
-//	GPIOOff( WVS_CS );  Delay();
-//	GPIOOff( WVS_CLK ); Delay();
-//
-////	for( bit = 0x80; bit; bit>>= 1)
-//	for( bit = 8; bit; bit-- )
-//	{
-//		if( data & 0x80 )
-//		{
-//			GPIOOn( WVS_DIN );
-//		}
-//		else
-//		{
-//			GPIOOff( WVS_DIN );
-//		}
-//		data<<=1;
-//
-//		Delay();
-//		GPIOOn( WVS_CLK );
-//		Delay();
-//		GPIOOff( WVS_CLK );
-//	}
-//	GPIOOn( WVS_CS );
-
     wvs_Select();
-    spi_send(SPI2, data); 									//which SPI????
+    spi_send(SPI2, data);
     while (SPI_SR(SPI2) & SPI_SR_BSY);
     wvs_Unselect();
 }
 
-static void SendCommand( uint8_t command  )
+static void SendCommand(uint8_t command)
 {
     gpio_clear(WVS_DC_PORT, WVS_DC_PIN);
-    SpiTransfer( command );
+    SpiTransfer(command);
 }
 
-static void SendData( uint8_t data  )
+static void SendData(uint8_t data)
 {
     gpio_set(WVS_DC_PORT, WVS_DC_PIN);
     SpiTransfer( data );
@@ -121,10 +83,9 @@ void SetupEPaperForData(void)
     SendCommand(0x10);
 }
 
-void SendEPaperData(uint8_t * data, int len)
+void SendEPaperData(const uint8_t* data, int len)
 {
-    int i;
-    for( i = 0; i < len; i++ )
+    for(int i = 0; i < len; i++ )
         SendData( data[i] );
 }
 
@@ -139,106 +100,23 @@ void FlushAndDisplayEPaper(void)
     delay_ms(20);
 }
 
-
 void ClearEpaper(uint8_t color)
 {
+    const uint8_t cv = (color << 4) | color;
     SetupEPaperForData();
 
-    uint8_t cv = (color<<4)|color;
-    for(int i=0; i<width/2; i++) {
-        for(int j=0; j<height; j++)
+    for(int i = 0; i < EPD_WIDTH / 2; i++) {
+        for(int j = 0; j < EPD_HEIGHT; j++)
+        {
             SendData(cv);
+        }
     }
 
     FlushAndDisplayEPaper();
 }
 
-
-void EPD_5IN65F_Show7Block(void)
-{
-    unsigned long i,j,k;
-    unsigned char const Color_seven[8] =
-	{EPD_5IN65F_BLACK,EPD_5IN65F_BLUE,EPD_5IN65F_GREEN,EPD_5IN65F_ORANGE,
-	EPD_5IN65F_RED,EPD_5IN65F_YELLOW,EPD_5IN65F_WHITE,7};
-	SetupEPaperForData();
-
-    for(i=0; i<224; i++) {
-        for(k = 0 ; k < 4; k ++) {
-            for(j = 0 ; j < 75; j ++) {
-                SendData((Color_seven[k]<<4) |Color_seven[k]);
-            }
-        }
-    }
-    for(i=0; i<224; i++) {
-        for(k = 4 ; k < 8; k ++) {
-            for(j = 0 ; j < 75; j ++) {
-                SendData((Color_seven[k]<<4) |Color_seven[k]);
-            }
-        }
-    }
-	FlushAndDisplayEPaper();
-}
-
-
-
-
-static void Clear(uint8_t color)
-{
-	SetupEPaperForData();
-    for(int i=0; i<width/2; i++) {
-        for(int j=0; j<height; j++)
-            SendData((color<<4)|color);
-    }
-	FlushAndDisplayEPaper();
-}
-
-
 void SetupEPaperDisplay(void)
 {
-//#if 0
-//	ConfigureGPIO( WVS_BUSY, INOUT_IN );
-//	ConfigureGPIO( WVS_RESET, INOUT_OUT | DEFAULT_OFF );
-//	ConfigureGPIO( WVS_DC, INOUT_OUT );
-//	ConfigureGPIO( WVS_CS, INOUT_OUT | DEFAULT_ON );
-//	ConfigureGPIO( WVS_CLK, INOUT_OUT | DEFAULT_OFF );
-//	ConfigureGPIO( WVS_DIN, INOUT_OUT | DEFAULT_OFF );
-//#endif
-
-//#define WVS_PORT  PORTD
-//#define WVS_PIN   PIND
-//#define WVS_DDR   DDRD
-//
-//	GPIOOn( WVS_CS );
-//	GPIOOff( WVS_CLK );
-//	GPIOOff( WVS_DIN );
-//	GPIOOff( WVS_RESET );
-//
-//	WVS_DDR &= ~_BV(WVS_BUSY);
-//	WVS_DDR |= _BV(WVS_DIN);
-//	WVS_DDR |= _BV(WVS_RESET);
-//	WVS_DDR |= _BV(WVS_DC);
-//	WVS_DDR |= _BV(WVS_CS);
-//	WVS_DDR |= _BV(WVS_CLK);
-//
-//	WVS_PORT |= _BV(WVS_BUSY); //Pull-up.
-//
-//	//Reset for 1ms
-//	_delay_ms( 10 );
-//
-//	GPIOOn( WVS_RESET );
-//
-//	_delay_ms( 10 );
-
-//#if 0
-//	_delay_ms(100);
-//	while(1)
-//	{
-//		GPIOOn( WVS_CS );
-//		GPIOOff( WVS_CS );
-//	}
-//#endif
-
-////////// set proper pins, ports and mode for spi!!
     rcc_periph_clock_enable(RCC_GPIOB);
     rcc_periph_clock_enable(RCC_SPI2);
 
@@ -258,7 +136,6 @@ void SetupEPaperDisplay(void)
     spi_set_full_duplex_mode(SPI2);
     spi_enable(SPI2);
 
-/////configure reset, busy, dc!
     gpio_mode_setup(WVS_RST_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, WVS_RST_PIN);
     gpio_mode_setup(WVS_DC_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, WVS_DC_PIN);
     gpio_mode_setup(WVS_BUSY_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, WVS_BUSY_PIN);
@@ -269,10 +146,7 @@ void SetupEPaperDisplay(void)
     gpio_set(WVS_RST_PORT, WVS_RST_PIN);
     delay_ms(10);
 
-///////////////
-    serial_puts( "Epaper Leaving Reset\n" );
-    EPD_5IN65F_BusyHigh( 20 );
-    serial_puts( "Epaper Busy High Done\n" );
+    EPD_5IN65F_BusyHigh(20);
 
     SendCommand(0x00);
     SendData(0xEF);
