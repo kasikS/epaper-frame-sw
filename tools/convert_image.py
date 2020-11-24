@@ -7,14 +7,13 @@ import os
 WIDTH = 600
 HEIGHT = 448
 PALETTE = (
-    (0, 0, 0),
-    (255, 255, 255),
-    (67, 138, 28),
-    (100, 64, 255),
-    (191, 0, 0),
-    (255, 243, 56),
-    (232, 126, 0),
-    (194, 164, 24)
+    (25, 25, 25),       # black
+    (255, 255, 255),    # white
+    (50, 103, 47),      # green
+    (45, 45, 110),      # blue
+    (125, 44, 44),      # red
+    (191, 173, 48),     # yellow
+    (204, 137, 45),     # orange
 )
 
 raw_data = []
@@ -63,7 +62,7 @@ with Image.open(sys.argv[1]) as input_img:
             raw_data.append(p1 << 4 | p2)
 
     # padding to make it a multiplicity of 512 bytes
-    raw_data.extend([0] * 256)
+    raw_data.extend([0xff] * 256)
 
 with open(os.path.splitext(sys.argv[1])[0] + '.bin', 'wb') as output_file:
     output_file.write(bytes(raw_data))
