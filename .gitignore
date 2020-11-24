@@ -6,3 +6,5 @@ generated.*.ld
 *.map
 *.bin
 *.png
+*.jpg
+tools/sd_image.raw
