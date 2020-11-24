@@ -28,22 +28,32 @@
 #include "power.h"
 #include "epaper.h"
 
-uint8_t sd_buf[512];
+#define SECTOR_SIZE         512
+#define SECTORS_PER_IMAGE   263
+static uint8_t sd_buf[SECTOR_SIZE];
 
 static inline __attribute__((always_inline)) void __WFI(void)
 {
-	__asm volatile ("wfi");
+    __asm volatile ("wfi");
 }
 
-void rtc_wkup_isr(void)
+void rtc_isr(void)
 {
     RTC_ISR &= ~(RTC_ISR_WUTF);
     exti_reset_request(EXTI20);
     serial_puts("RTC!");
 }
 
-static void display_image(unsigned int index)
+
+// Return codes for display_image()
+#define DISPLAY_OK   0
+#define SD_FAILURE   1
+#define END_OF_DATA  2
+
+static int display_image(unsigned int index)
 {
+    bool correct = false;
+
     power_sd(false);
     power_epaper(false);
     delay_ms(50);
@@ -58,65 +68,78 @@ static void display_image(unsigned int index)
         serial_puts("buuu:(");
         power_sd(false);
         power_epaper(false);
-        return;
+        return SD_FAILURE;
     } else {
         serial_puts("sd ok");
     }
 
     SetupEPaperForData();
-    SDCARD_ReadBegin(index * 263);
+    SDCARD_ReadBegin(index * SECTORS_PER_IMAGE);
 
     // read image from SD and transfer it to epaper
-    for(int i = 0; i < 263; ++i) {
+    for(int i = 0; i < SECTORS_PER_IMAGE; ++i) {
         SDCARD_ReadData(sd_buf);
+
+        // check if this is an empty image, indicating the end of data
+        if (!correct) {
+            for (int j = 0; j < SECTOR_SIZE; ++j) {
+                if (sd_buf[j] != 0xff) {
+                    correct = true;
+                    break;
+                }
+            }
+        }
+
         SendEPaperData(sd_buf, sizeof(sd_buf));
     }
+
     SDCARD_ReadEnd();
 
-    FlushAndDisplayEPaper();
+    if (correct)
+        FlushAndDisplayEPaper();
 
     delay_ms(100);
     power_sd(false);
     power_epaper(false);
+
+    return correct ? DISPLAY_OK : END_OF_DATA;
 }
+
+// TODO to use standby mode, the last image index needs to be stored in
+// a backup register
 
 int main(void)
 {
+    unsigned int image_index = 0;
     /*setup_clocks();*/
-    char int_buf[6];
-    int int_len;
 
     serial_init(115200);
     delay_init();
-    rtc_init();
     power_init();
-    if (SDCARD_Init() == 0)
-    {
-        serial_puts("jeeej!");
-        memset(sd_buf, 0, 512);
-        SDCARD_ReadBegin(0);
-        SDCARD_ReadData(sd_buf);
-        SDCARD_ReadEnd();
+    /*rtc_init();*/
 
-        for (int i = 0; i < 32; ++i)
-        {
-            int_len = toa(sd_buf[i], int_buf);
-            serial_write(int_buf, int_len);
-            serial_puts("\r\n");
-        }
-    }
-    else
-    {
-        serial_puts("buuu:(");
-    }
-
-    rtc_set_wakeup(86400);  // 86400s == 24h
-
+    serial_puts("siema");
+    /*rtc_set_wakeup(86400);  // 86400s == 24h*/
 
     while (1)
     {
-        pwr_set_standby_mode();
-        __WFI();
+        int result = display_image(image_index);
 
+        if (result == DISPLAY_OK) {
+            ++image_index;
+
+        } else if (result == END_OF_DATA) {
+            image_index = 0;
+            display_image(image_index);
+
+        } else if (result == SD_FAILURE) {
+            // TODO
+        }
+
+        delay_ms(10000);
+        serial_putc('a');
+
+        /*pwr_set_standby_mode();*/
+        /*__WFI();*/
     }
 }
