@@ -28,6 +28,17 @@
 #include "power.h"
 #include "epaper.h"
 
+#define DEBUG
+
+#ifdef DEBUG
+#define dbg_s(x) serial_puts(x)
+#define dbg_c(x) serial_putc(x)
+#else
+#define dbg_s(x)
+#define dbg_c(x)
+#endif
+
+
 #define SECTOR_SIZE         512
 #define SECTORS_PER_IMAGE   263
 static uint8_t sd_buf[SECTOR_SIZE];
@@ -43,10 +54,34 @@ void rtc_isr(void)
 {
     RTC_ISR &= ~(RTC_ISR_WUTF);
     exti_reset_request(EXTI20);
-    serial_putc(image_index + '0');
+    dbg_c(image_index + '0');
     ++image_index;
 }
 
+static void setup_clocks(void)
+{
+    struct rcc_clock_scale a =
+    { /* 4MHz HSI raw */
+        .hpre = RCC_CFGR_HPRE_DIV4,
+        .ppre1 = RCC_CFGR_PPRE1_NODIV,
+        .ppre2 = RCC_CFGR_PPRE2_NODIV,
+        .voltage_scale = PWR_SCALE1,
+        .flash_waitstates = 0,
+        .ahb_frequency  = 4000000,
+        .apb1_frequency = 4000000,
+        .apb2_frequency = 4000000,
+    };
+       rcc_clock_setup_pll(&a);
+       /* Lots of things on all ports... */
+       rcc_periph_clock_enable(RCC_GPIOA);
+       rcc_periph_clock_enable(RCC_GPIOB);
+       /* Enable clocks for USART2. */
+       rcc_periph_clock_enable(RCC_USART2);
+       /* And timers. */
+       rcc_periph_clock_enable(RCC_TIM6);
+       rcc_periph_clock_enable(RCC_TIM7);
+       /* And syscfg for exti port mapping */
+       rcc_periph_clock_enable(RCC_SYSCFG);
 }
 
 
@@ -70,12 +105,12 @@ static int display_image(unsigned int index)
     SetupEPaperDisplay();
 
     if (SDCARD_Init()) {
-        serial_puts("buuu:(");
+        dbg_s("buuu:(");
         power_sd(false);
         power_epaper(false);
         return SD_FAILURE;
     } else {
-        serial_puts("sd ok");
+        dbg_s("sd ok");
     }
 
     SetupEPaperForData();
@@ -117,15 +152,18 @@ int main(void)
 {
     /*setup_clocks();*/     // TODO broken, do not run!
 
-    serial_init(115200);
-    delay_init();
     power_init();
-    rtc_init();
-
+    delay_init();
     // leave 3 seconds to start flashing before entering deep sleep mode
     delay_ms(3000);
 
-    serial_puts("siema");
+    #ifdef DEBUG
+    serial_init(115200);
+    dbg_s("siema");
+    #endif
+
+    power_init();
+    rtc_init();
     rtc_set_wakeup(2);  // 86400s == 24h
 
     while (1)
