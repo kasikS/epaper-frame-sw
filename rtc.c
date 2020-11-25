@@ -93,5 +93,5 @@ void rtc_set_wakeup(unsigned int period)
     /* done with rtc registers, lock them again */
     rtc_lock();
 
-    nvic_enable_irq(NVIC_RTC_WKUP_IRQ);
+    nvic_enable_irq(NVIC_RTC_IRQ);
 }

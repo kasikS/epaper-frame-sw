@@ -32,6 +32,8 @@
 #define SECTORS_PER_IMAGE   263
 static uint8_t sd_buf[SECTOR_SIZE];
 
+unsigned int image_index = 0;
+
 static inline __attribute__((always_inline)) void __WFI(void)
 {
     __asm volatile ("wfi");
@@ -41,7 +43,10 @@ void rtc_isr(void)
 {
     RTC_ISR &= ~(RTC_ISR_WUTF);
     exti_reset_request(EXTI20);
-    serial_puts("RTC!");
+    serial_putc(image_index + '0');
+    ++image_index;
+}
+
 }
 
 
@@ -110,19 +115,22 @@ static int display_image(unsigned int index)
 
 int main(void)
 {
-    unsigned int image_index = 0;
-    /*setup_clocks();*/
+    /*setup_clocks();*/     // TODO broken, do not run!
 
     serial_init(115200);
     delay_init();
     power_init();
-    /*rtc_init();*/
+    rtc_init();
+
+    // leave 3 seconds to start flashing before entering deep sleep mode
+    delay_ms(3000);
 
     serial_puts("siema");
-    /*rtc_set_wakeup(86400);  // 86400s == 24h*/
+    rtc_set_wakeup(2);  // 86400s == 24h
 
     while (1)
     {
+        /*
         int result = display_image(image_index);
 
         if (result == DISPLAY_OK) {
@@ -134,12 +142,13 @@ int main(void)
 
         } else if (result == SD_FAILURE) {
             // TODO
-        }
+        }*/
 
-        delay_ms(10000);
-        serial_putc('a');
+        /*delay_ms(2000);*/
+        /*serial_putc('a');*/
 
-        /*pwr_set_standby_mode();*/
-        /*__WFI();*/
+        /*pwr_set_stop_mode();*/
+        pwr_set_standby_mode();
+        __WFI();
     }
 }
