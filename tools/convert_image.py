@@ -51,8 +51,9 @@ with Image.open(sys.argv[1]) as input_img:
 
     assert(input_img.size[0] == WIDTH and input_img.size[1] == HEIGHT)
 
-    dithered_img = hitherdither.ordered.yliluoma.yliluomas_1_ordered_dithering(input_img, hitherdither_palette, order=8)
+    #dithered_img = hitherdither.ordered.yliluoma.yliluomas_1_ordered_dithering(input_img, hitherdither_palette, order=8)
     #dithered_img = hitherdither.ordered.bayer.bayer_dithering(input_img, hitherdither_palette, [256/4, 256/4, 256/4], order=16)
+    dithered_img = hitherdither.diffusion.error_diffusion_dithering(input_img, hitherdither_palette, method="floyd-steinberg", order=2)
     input_pix = dithered_img.load()
 
     for y in range(HEIGHT):
