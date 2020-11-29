@@ -6,6 +6,7 @@
 // all procedures return 0 on success, < 0 on failure
 
 int SDCARD_Init(void);
+int SDCARD_Deinit(void);
 int SDCARD_GetBlocksNumber(uint32_t* num);
 int SDCARD_ReadSingleBlock(uint32_t blockNum, uint8_t* buff); // sizeof(buff) == 512!
 int SDCARD_WriteSingleBlock(uint32_t blockNum, const uint8_t* buff); // sizeof(buff) == 512!

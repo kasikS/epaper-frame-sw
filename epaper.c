@@ -99,7 +99,6 @@ void FlushAndDisplayEPaper(void)
     EPD_5IN65F_BusyLow(150);
     delay_ms(20);
 }
-
 void ClearEpaper(uint8_t color)
 {
     const uint8_t cv = (color << 4) | color;
@@ -182,4 +181,22 @@ void SetupEPaperDisplay(void)
     SendCommand(0x50);
     SendData(0x37);
     delay_ms(50);
+}
+
+void StopEPaperDisplay(void)
+{
+    gpio_clear(GPIOB, GPIO13);
+    gpio_clear(GPIOB, GPIO14);
+    gpio_clear(GPIOB, GPIO15);
+    gpio_clear(WVS_CS_PORT, WVS_CS_PIN);
+    gpio_clear(WVS_RST_PORT, WVS_RST_PIN);
+    gpio_clear(WVS_DC_PORT, WVS_DC_PIN);
+
+    /*gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO13);*/
+    /*gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO14);*/
+    /*gpio_mode_setup(GPIOB, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO15);*/
+    /*gpio_mode_setup(WVS_CS_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, WVS_CS_PIN);*/
+    /*gpio_mode_setup(WVS_RST_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, WVS_RST_PIN);*/
+    /*gpio_mode_setup(WVS_DC_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, WVS_DC_PIN);*/
+    /*//gpio_mode_setup(WVS_BUSY_PORT, GPIO_MODE_INPUT, GPIO_PUPD_PULLUP, WVS_BUSY_PIN);*/
 }

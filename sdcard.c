@@ -283,6 +283,13 @@ int SDCARD_Init() {
     return 0;
 }
 
+int SDCARD_Deinit(void)
+{
+    gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO5);
+    gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO6);
+    gpio_mode_setup(GPIOA, GPIO_MODE_INPUT, GPIO_PUPD_NONE, GPIO7);
+    gpio_mode_setup(CS_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, CS_PIN);
+}
 
 int SDCARD_GetBlocksNumber(uint32_t* num) {
     uint8_t csd[16];

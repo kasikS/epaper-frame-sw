@@ -20,6 +20,8 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/flash.h>
+#include <libopencm3/cm3/scb.h>
+#include <libopencmsis/core_cm3.h>
 
 #include "serial.h"
 #include "delay.h"
@@ -28,7 +30,7 @@
 #include "power.h"
 #include "epaper.h"
 
-#define DEBUG
+/*#define DEBUG*/
 
 #ifdef DEBUG
 #define dbg_s(x) serial_puts(x)
@@ -45,17 +47,11 @@ static uint8_t sd_buf[SECTOR_SIZE];
 
 unsigned int image_index = 0;
 
-static inline __attribute__((always_inline)) void __WFI(void)
-{
-    __asm volatile ("wfi");
-}
-
 void rtc_isr(void)
 {
     RTC_ISR &= ~(RTC_ISR_WUTF);
     exti_reset_request(EXTI20);
     dbg_c(image_index + '0');
-    ++image_index;
 }
 
 static void setup_clocks(void)
@@ -96,16 +92,15 @@ static int display_image(unsigned int index)
 
     power_sd(false);
     power_epaper(false);
-    delay_ms(50);
+    delay_ms(25);
 
     power_epaper(true);
     power_sd(true);
-    delay_ms(200);
-
-    SetupEPaperDisplay();
+    delay_ms(25);
 
     if (SDCARD_Init()) {
         dbg_s("buuu:(");
+        SDCARD_Deinit();
         power_sd(false);
         power_epaper(false);
         return SD_FAILURE;
@@ -113,6 +108,7 @@ static int display_image(unsigned int index)
         dbg_s("sd ok");
     }
 
+    SetupEPaperDisplay();
     SetupEPaperForData();
     SDCARD_ReadBegin(index * SECTORS_PER_IMAGE);
 
@@ -134,13 +130,15 @@ static int display_image(unsigned int index)
     }
 
     SDCARD_ReadEnd();
+    power_sd(false);
+    SDCARD_Deinit();
 
     if (correct)
         FlushAndDisplayEPaper();
 
-    delay_ms(100);
-    power_sd(false);
     power_epaper(false);
+    delay_ms(25);
+    StopEPaperDisplay();
 
     return correct ? DISPLAY_OK : END_OF_DATA;
 }
@@ -164,11 +162,11 @@ int main(void)
 
     power_init();
     rtc_init();
-    rtc_set_wakeup(2);  // 86400s == 24h
+    /*rtc_set_wakeup(24 * 60 * 60);  // 24h       // TODO*/
+    rtc_set_wakeup(30);
 
     while (1)
     {
-        /*
         int result = display_image(image_index);
 
         if (result == DISPLAY_OK) {
@@ -180,11 +178,11 @@ int main(void)
 
         } else if (result == SD_FAILURE) {
             // TODO
-        }*/
+        }
 
-        /*delay_ms(2000);*/
-        /*serial_putc('a');*/
+        /*delay_ms(10000);*/
 
+        PWR_CR |= PWR_CR_LPSDSR;    // voltage regulator in low power mode
         /*pwr_set_stop_mode();*/
         pwr_set_standby_mode();
         __WFI();

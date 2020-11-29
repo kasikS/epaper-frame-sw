@@ -31,5 +31,6 @@ void FlushAndDisplayEPaper(void);
 void ClearEpaper(uint8_t color);
 
 void EPD_5IN65F_Show7Block(void);
+void StopEPaperDisplay(void);
 
 #endif
