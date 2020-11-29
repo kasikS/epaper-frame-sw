@@ -141,9 +141,9 @@ void SetupEPaperDisplay(void)
 
     //Reset for 1ms
     gpio_clear(WVS_RST_PORT, WVS_RST_PIN);
-    delay_ms(10);
+    delay_ms(1);
     gpio_set(WVS_RST_PORT, WVS_RST_PIN);
-    delay_ms(10);
+    delay_ms(1);
 
     EPD_5IN65F_BusyHigh(20);
 

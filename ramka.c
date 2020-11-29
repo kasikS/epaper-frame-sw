@@ -90,13 +90,11 @@ static int display_image(unsigned int index)
 {
     bool correct = false;
 
-    power_sd(false);
-    power_epaper(false);
-    delay_ms(25);
-
     power_epaper(true);
     power_sd(true);
     delay_ms(25);
+
+    SetupEPaperDisplay();
 
     if (SDCARD_Init()) {
         dbg_s("buuu:(");
@@ -108,7 +106,6 @@ static int display_image(unsigned int index)
         dbg_s("sd ok");
     }
 
-    SetupEPaperDisplay();
     SetupEPaperForData();
     SDCARD_ReadBegin(index * SECTORS_PER_IMAGE);
 
@@ -137,11 +134,22 @@ static int display_image(unsigned int index)
         FlushAndDisplayEPaper();
 
     power_epaper(false);
-    delay_ms(25);
     StopEPaperDisplay();
 
     return correct ? DISPLAY_OK : END_OF_DATA;
 }
+
+
+static void stop_mode(void)
+{
+    /* Prepare to enter stop mode */
+    PWR_CR |= PWR_CR_CWUF; // clear the WUF flag after 2 clock cycles
+    PWR_CR &= ~( PWR_CR_PDDS ); // Enter stop mode when the CPU enters deepsleep
+    //RCC_CFGR |= RCC_CFGR_STOPWUCK_HSI16; // HSI16 oscillator is wake-up from stop clock
+    SCB_SCR |= SCB_SCR_SLEEPDEEP_Msk; // low-power mode = stop mode
+    __WFI(); // enter low-power mode
+}
+
 
 // TODO to use standby mode, the last image index needs to be stored in
 // a backup register
@@ -182,9 +190,6 @@ int main(void)
 
         /*delay_ms(10000);*/
 
-        PWR_CR |= PWR_CR_LPSDSR;    // voltage regulator in low power mode
-        /*pwr_set_stop_mode();*/
-        pwr_set_standby_mode();
-        __WFI();
+        stop_mode();
     }
 }
