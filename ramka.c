@@ -170,8 +170,7 @@ int main(void)
 
     power_init();
     rtc_init();
-    /*rtc_set_wakeup(24 * 60 * 60);  // 24h       // TODO*/
-    rtc_set_wakeup(30);
+    rtc_set_wakeup(24 * 60 * 60);
 
     while (1)
     {
@@ -187,8 +186,6 @@ int main(void)
         } else if (result == SD_FAILURE) {
             // TODO
         }
-
-        /*delay_ms(10000);*/
 
         stop_mode();
     }
