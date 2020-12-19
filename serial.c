@@ -131,3 +131,8 @@ void serial_puts(const char *string)
         ++string;
     }
 }
+
+char serial_getc(void)
+{
+    return usart_recv_blocking(USART2);
+}
