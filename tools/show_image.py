@@ -10,11 +10,11 @@ IMAGE_SIZE = math.ceil(WIDTH * HEIGHT / 2 / 512) * 512 # round to 512
 PALETTE = (
     (25, 25, 25),       # black
     (255, 255, 255),    # white
-    (50, 103, 47),      # green
-    (45, 45, 110),      # blue
-    (125, 44, 44),      # red
-    (191, 173, 48),     # yellow
-    (204, 137, 45),     # orange
+    (74, 129, 74),      # green
+    (69, 68, 108),      # blue
+    (153, 50, 69),      # red
+    (235, 201, 104),     # yellow
+    (225, 172, 118),     # orange
 )
 
 if len(sys.argv) == 1:
